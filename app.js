@@ -54,12 +54,13 @@ var roon = new RoonApi({
 		transport.subscribe_zones(function(cmd, data) {
 			if ( typeof data !== "undefined" ) {
 				for ( var zoneevent in data ) {
-					for( var index in data[zoneevent] ) {
-						var zonedata = data[zoneevent][index];
+					var zones=data[zoneevent];
+					for( var index in zones ) {
+						var zonedata = zones[index];
 						var zone_name = zonedata.display_name;
 						console.log('sending state for zone %s', zone_name);
 						for ( var attribute in zonedata ) {
-							mqtt_publish_JSON( 'roon/'+zone_name, mqtt_client, zonedata[zonedata]);
+							mqtt_publish_JSON( 'roon/'+zone_name, mqtt_client, zonedata);
 						}
 					}
 				}
