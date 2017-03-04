@@ -7,7 +7,6 @@ var internetradiostations;
 var RoonApi = require("node-roon-api"),
 	RoonApiStatus		= require("node-roon-api-status"),
 	RoonApiTransport	= require("node-roon-api-transport"),
-	RoonApiBrowse		= require('node-roon-api-browse'),
 	RoonApiSettings		= require('node-roon-api-settings');
 
 
@@ -53,26 +52,21 @@ var roon = new RoonApi({
 		core = core_;
 		let transport = core.services.RoonApiTransport;
 		transport.subscribe_zones(function(cmd, data) {
-			/*console.log(core.core_id,
-				core.display_name,
-				core.display_version,
-				"-",
-				cmd,
-				JSON.stringify(data, null, '  '));*/
-			//console.log('data.zone_changed=',JSON.stringify(data.zones_changed,null,'
-			for( var index in data.zones_changed ) {
-				var zone_change = data.zones_changed[index];
-				var zone_name = zone_change.display_name;
-				console.log('sending state for zone %s', zone_name);
-				for ( var attribute in zone_change ) {
-					mqtt_publish_JSON( 'roon/'+zone_name, mqtt_client, zone_change);
+			if ( typeof data !== "undefined" ) {
+				for( var index in data.zones_changed ) {
+					var zone_change = data.zones_changed[index];
+					var zone_name = zone_change.display_name;
+					console.log('sending state for zone %s', zone_name);
+					for ( var attribute in zone_change ) {
+						mqtt_publish_JSON( 'roon/'+zone_name, mqtt_client, zone_change);
+					}
 				}
 			}
 		});
 	},
 
-	core_unpaired: function(core) {
-		console.log(core.core_id,
+	core_unpaired: function(core_) {
+		console.log(_core.core_id,
 			core.display_name,
 			core.display_version,
 			"-",
@@ -105,7 +99,7 @@ var svc_settings = new RoonApiSettings(roon, {
 });
 
 roon.init_services({
-	required_services: [ RoonApiTransport,RoonApiBrowse ],
+	required_services: [ RoonApiTransport ],
 	provided_services: [ svc_settings, svc_status ]
 });
 
