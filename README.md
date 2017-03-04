@@ -4,7 +4,9 @@ Extension for Roon that publishes status to a MQTT broker
 Install:
 
 clone the repository and change to extension directory
+
 run "npm install"
+
 run "nodejs ."
 
 
