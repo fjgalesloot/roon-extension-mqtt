@@ -1,0 +1,14 @@
+[Service]
+ExecStart=/bin/bash -c '/usr/bin/nodejs /home/floris/roon-extension-mqtt/ >/var/log/roon-extension-mqtt 2>&1'
+Restart=always
+#StandardOutput=roon-extention-mqtt
+#StandardError=roon-extention-mqtt
+SyslogIdentifier=roon-mqtt-extension
+User=floris
+Group=floris
+Environment=NODE_ENV=production
+WorkingDirectory=/home/floris/roon-extension-mqtt/
+
+[Install]
+WantedBy=multi-user.target
+
