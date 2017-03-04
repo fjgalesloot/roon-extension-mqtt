@@ -1,0 +1,18 @@
+{
+    "roonstate": {
+        "tokens": {
+            "b4f760e9-c5de-412a-b52f-ba0972427cf2": "647999e5-737e-482b-9939-d96a502b4957",
+            "17e76491-dc0b-4b95-8a7d-d7d05cd79910": "2b7b6a59-4b84-4dc7-a01e-01ee26972512"
+        },
+        "paired_core_id": "17e76491-dc0b-4b95-8a7d-d7d05cd79910"
+    },
+    "settings": {
+        "zone": {
+            "output_id": "1701bda7f95196448140db3bb6290e708455",
+            "name": "Slaapkamer"
+        },
+        "mqttbroker": "openhab.galesloot-ict.local",
+        "radiostation": "16:1",
+        "internetradioradiostation": "BNR nieuwsradio"
+    }
+}
