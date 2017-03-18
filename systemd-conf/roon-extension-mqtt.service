@@ -1,5 +1,5 @@
 [Service]
-ExecStart=/bin/bash -c '/usr/bin/nodejs /home/floris/roon-extension-mqtt/ >/var/log/roon-extension-mqtt 2>&1'
+ExecStart=/bin/bash -c '/usr/bin/nodejs /home/floris/roon-extension-mqtt/ >/dev/null 2>&1'
 Restart=always
 #StandardOutput=roon-extention-mqtt
 #StandardError=roon-extention-mqtt
