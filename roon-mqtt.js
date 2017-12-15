@@ -1,7 +1,8 @@
 const mqtt = require('mqtt');
 var mqtt_client, roon_core, roon_zones={};
 var debug = true;
-var trace = false;
+var trace = true;
+var mqtt_data={};
 
 var RoonApi 			= require("node-roon-api"),
 	RoonApiStatus		= require("node-roon-api-status"),
@@ -14,8 +15,9 @@ function mqtt_publish_JSON( mqttbase, mqtt_client, jsondata ) {
 	for ( var attribute in jsondata ) {
 		if ( typeof jsondata[attribute] === 'object' ) {
 			mqtt_publish_JSON( mqttbase+'/'+attribute, mqtt_client, jsondata[attribute] );
-		} else {
+		} else if ( typeof mqtt_data[mqttbase+'/'+attribute] === 'undefined' || mqtt_data[mqttbase+'/'+attribute] != jsondata[attribute].toString()) {
 			if ( trace ) { console.log('sending MQTT: '+mqttbase+'/'+attribute+'='+jsondata[attribute]); }
+			mqtt_data[mqttbase+'/'+attribute] = jsondata[attribute].toString();
 			mqtt_client.publish(mqttbase+'/'+attribute,jsondata[attribute].toString());
 		}
 	}
