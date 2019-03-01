@@ -1,6 +1,6 @@
 const mqtt = require('mqtt');
 var mqtt_client, roon_core, roon_zones={};
-var debug = false;
+var debug = true;
 var trace = false;
 var mqtt_data={};
 
@@ -146,12 +146,15 @@ var roon = new RoonApi({
 						for( var index in zones ) {
 							var zonedata = roonzone_json_changeoutputs(zones[index]);
 							var zonename = zonedata.display_name;
-							//var regex = '';
-							zonename = zonename.replace(/ \+.*/,'');
-							roon_zones[zonename] = JSON.parse(JSON.stringify(zonedata));
-							console.log('sending state for zone %s', zonename);
-							for ( var attribute in zonedata ) {
-								mqtt_publish_JSON( 'roon/'+zonename, mqtt_client, zonedata);
+							
+							if (typeof zonename !== 'undefined' && zonename) {
+								//var regex = '';
+								zonename = zonename.replace(/ \+.*/,'');
+								roon_zones[zonename] = JSON.parse(JSON.stringify(zonedata));
+								console.log('sending state for zone %s', zonename);
+								for ( var attribute in zonedata ) {
+									mqtt_publish_JSON( 'roon/'+zonename, mqtt_client, zonedata);
+								}
 							}
 						}
 					}
