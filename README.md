@@ -30,7 +30,7 @@ To control a zone or an output, push a MQTT message to a zone/output like the fo
 
 Send 'play' command to zone:   `/roon/[zone-name]/command/play`
 
-Send 'play' command to output  `/roon/[zone-name]/[output-name]/play`
+Send 'play' command to output  `/roon/[zone-name]/[output-name]/command/play`
 
 
 Available commands to use are defined by the RoonApiTransport: `play | pause | playpause | stop | previous | next`
