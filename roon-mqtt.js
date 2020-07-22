@@ -11,67 +11,88 @@ var RoonApi 			= require("node-roon-api"),
 
 
 function mqtt_publish_JSON( mqttbase, mqtt_client, jsondata ) {
-	mqtt_client.publish('roon/online','true');
-	for ( var attribute in jsondata ) {
-		if ( typeof jsondata[attribute] === 'object' ) {
-			mqtt_publish_JSON( mqttbase+'/'+attribute, mqtt_client, jsondata[attribute] );
-		} else if ( typeof mqtt_data[mqttbase+'/'+attribute] === 'undefined' || mqtt_data[mqttbase+'/'+attribute] != jsondata[attribute].toString()) {
-			if ( trace ) { console.log('sending MQTT: '+mqttbase+'/'+attribute+'='+jsondata[attribute]); }
-			mqtt_data[mqttbase+'/'+attribute] = jsondata[attribute].toString();
-			mqtt_client.publish(mqttbase+'/'+attribute,jsondata[attribute].toString());
+	if ( mqtt_client.connected ) {
+		mqtt_client.publish('roon/online','true');
+		for ( var attribute in jsondata ) {
+			if ( typeof jsondata[attribute] === 'object' ) {
+				mqtt_publish_JSON( mqttbase+'/'+attribute, mqtt_client, jsondata[attribute] );
+			} else if ( typeof mqtt_data[mqttbase+'/'+attribute] === 'undefined' || mqtt_data[mqttbase+'/'+attribute] != jsondata[attribute].toString()) {
+				if ( trace ) { console.log('sending MQTT: '+mqttbase+'/'+attribute+'='+jsondata[attribute]); }
+				mqtt_data[mqttbase+'/'+attribute] = jsondata[attribute].toString();
+				mqtt_client.publish(mqttbase+'/'+attribute,jsondata[attribute].toString());
+			}
 		}
 	}
 
 }
 
 function mqtt_get_client() {
-	mqtt_client = mqtt.connect('mqtt://' + mysettings.mqttbroker);
+	try {
+		if ( mqtt_client ) { mqtt_client.end(); }
+		var protocol = "mqtt://";
+		if ( mysettings.mqttprotocol ) { protocol = mysettings.mqttprotocol; }
 
-	mqtt_client.on('connect', () => {
-		mqtt_client.publish('roon/online','true');
-		mqtt_client.subscribe('roon/+/command');
-		mqtt_client.subscribe('roon/+/outputs/+/volume/set');
-		//mqtt_client.subscribe('roon/#');
-		roon_svc_status.set_status("MQTT Broker Connected", false);
-		
-	});
+		options = [];
+		if ( mysettings.mqttusername && mysettings.mqttpassword ) {
+			options.push({ 'username' : mysettings.mqttusername });
+			options.push({ 'password' : new Buffer(mysettings.mqttpassword) });
+		}
 
-	mqtt_client.on('offline', () => {
-		roon_svc_status.set_status("MQTT Broker Offline", true);
-	});
-	
-	mqtt_client.on('message', function (topic, message ) {
-		if ( debug ) { console.log( 'received mqtt packet: topic=%s, message=%s', topic, message); }
-		var topic_split = topic.split("/");
-		if ( typeof roon_core !== 'undefined' && topic_split[0] === "roon" ) {
-			if ( debug ) { console.log('we know of zones: %s', Object.keys(roon_zones) );}
-			if ( typeof roon_zones[topic_split[1]] === "undefined" ) {
-				console.log('zone %s not found!', topic_split[1] );
-			} else if ( topic_split[2] === 'command' && topic_split.length == 3) {	
-				// Control entire zone
-				if ( debug ) { console.log('sending command %s to zone with id=%s', message, roon_zones[topic_split[1]]["zone_id"] );}
-				roon_core.services.RoonApiTransport.control(roon_zones[topic_split[1]]["zone_id"], message.toString());
-			} else if ( topic_split[2] === 'command'  && topic_split.length == 4) {				
-				// Control single output in zone
-				var outputid = roonzone_find_outputid_by_name(topic_split[1],topic_split[3]);
-				if ( outputid == null ) {
-					console.log('output %s not found in zone %s!', topic_split[3], topic_split[1] );
-				} else {
-					if ( debug ) { console.log('sending command %s to output with id=%s in zone=%s', message, outputid, topic_split[1] );}
-					roon_core.services.RoonApiTransport.control(outputid, message.toString());					
-				}
-			} else if (topic_split[2] === 'outputs' && topic_split[4] === 'volume' && topic_split[5] === 'set') {
-				if ( debug ) { console.log('find output id for zone=%s, output=%s', topic_split[1], topic_split[3]) ;}
-				var outputid = roonzone_find_outputid_by_name(topic_split[1],topic_split[3]);
-				if ( outputid == null ) {
-					console.log('output %s not found in zone %s!', topic_split[3], topic_split[1] );
-				} else {
-					roon_core.services.RoonApiTransport.change_volume(outputid, "absolute", parseInt(message));
+		mqtt_client = mqtt.connect(protocol + mysettings.mqttbroker, options);
+
+		mqtt_client.on('error', function(err) {
+			if ( debug ) { console.log('Error connecting: %s', err);}
+	                roon_svc_status.set_status("MQTT Broker Offline (error connecting)", true);
+		});
+
+		mqtt_client.on('connect', () => {
+			mqtt_client.publish('roon/online','true');
+			mqtt_client.subscribe('roon/+/command');
+			mqtt_client.subscribe('roon/+/outputs/+/volume/set');
+			//mqtt_client.subscribe('roon/#');
+			roon_svc_status.set_status("MQTT Broker Connected", false);
+		});
+
+		mqtt_client.on('offline', () => {
+			roon_svc_status.set_status("MQTT Broker Offline", true);
+		});
+
+		mqtt_client.on('message', function (topic, message ) {
+			if ( debug ) { console.log( 'received mqtt packet: topic=%s, message=%s', topic, message); }
+			var topic_split = topic.split("/");
+			if ( typeof roon_core !== 'undefined' && topic_split[0] === "roon" ) {
+				if ( debug ) { console.log('we know of zones: %s', Object.keys(roon_zones) );}
+				if ( typeof roon_zones[topic_split[1]] === "undefined" ) {
+					console.log('zone %s not found!', topic_split[1] );
+				} else if ( topic_split[2] === 'command' && topic_split.length == 3) {	
+					// Control entire zone
+					if ( debug ) { console.log('sending command %s to zone with id=%s', message, roon_zones[topic_split[1]]["zone_id"] );}
+					roon_core.services.RoonApiTransport.control(roon_zones[topic_split[1]]["zone_id"], message.toString());
+				} else if ( topic_split[2] === 'command'  && topic_split.length == 4) {				
+					// Control single output in zone
+					var outputid = roonzone_find_outputid_by_name(topic_split[1],topic_split[3]);
+					if ( outputid == null ) {
+						console.log('output %s not found in zone %s!', topic_split[3], topic_split[1] );
+					} else {
+						if ( debug ) { console.log('sending command %s to output with id=%s in zone=%s', message, outputid, topic_split[1] );}
+						roon_core.services.RoonApiTransport.control(outputid, message.toString());					
+					}
+				} else if (topic_split[2] === 'outputs' && topic_split[4] === 'volume' && topic_split[5] === 'set') {
+					if ( debug ) { console.log('find output id for zone=%s, output=%s', topic_split[1], topic_split[3]) ;}
+					var outputid = roonzone_find_outputid_by_name(topic_split[1],topic_split[3]);
+					if ( outputid == null ) {
+						console.log('output %s not found in zone %s!', topic_split[3], topic_split[1] );
+					} else {
+						roon_core.services.RoonApiTransport.change_volume(outputid, "absolute", parseInt(message));
+					}
 				}
 			}
-		}
-		
-	});
+		});
+	} catch (err) {
+		if ( debug ) { console.log('Error connecting: %s', err);}
+		roon_svc_status.set_status("MQTT Broker Offline (error)", true);
+	}
+
 }
 
 function roonzone_find_by_id(zoneid) {
@@ -108,9 +129,31 @@ function makelayout(settings) {
     };
 
     l.layout.push({
+		type:    "dropdown",
+		title:   "Protocol",
+		values:  [
+	        	{ title: "mqtt", value: 'mqtt://' },
+        		{ title: "mqtts",   value: 'mqtts://'  }
+       		],
+		setting: "mqttprotocol",
+    });
+
+    l.layout.push({
 		type:    "string",
-		title:   "MQTT Broker Host/IP",
+		title:   "Broker Host/IP",
 		setting: "mqttbroker",
+    });
+
+    l.layout.push({
+		type:    "string",
+		title:   "Username",
+		setting: "mqttusername",
+    });
+
+    l.layout.push({
+		type:    "string",
+		title:   "Password",
+		setting: "mqttpassword",
     });
 
    return l;
@@ -120,7 +163,7 @@ function makelayout(settings) {
 var roon = new RoonApi({
 	extension_id:        'nl.fjgalesloot.mqtt',
 	display_name:        "MQTT Extension",
-	display_version:     "0.1",
+	display_version:     "0.2",
 	publisher:           'Floris Jan Galesloot',
 	email:               'fjgalesloot@triplew.nl',
 	website:             'https://github.com/fjgalesloot/roon-extension-mqtt',
@@ -171,6 +214,7 @@ var roon = new RoonApi({
 
 var mysettings = roon.load_config("settings") || {
 	mqttbroker: "localhost",
+	mqttprotocol: "mqtt://"
 };
 var roon_svc_status = new RoonApiStatus(roon);
 
@@ -187,6 +231,7 @@ var roon_svc_settings = new RoonApiSettings(roon, {
             roon_svc_settings.update_settings(l);
             roon.save_config("settings", mysettings);
         }
+	if ( debug ) { console.log('*** new setting, reconnecting mqtt client. Settings=%s', mysettings.mqttprotocol); }
         mqtt_get_client();
     }
 });
