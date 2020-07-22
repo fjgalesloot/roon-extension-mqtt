@@ -1,6 +1,6 @@
 {
     "name": "roon-mqtt-extension",
-    "version": "0.0.1",
+    "version": "0.3",
     "description": "Roon Extension to provde status to MQTT Broker",
     "main": "roon-mqtt.js",
     "author": "Floris Jan Galesloot",
@@ -8,8 +8,8 @@
     "dependencies": {
         "node-roon-api": "github:roonlabs/node-roon-api",
         "node-roon-api-status": "github:roonlabs/node-roon-api-status",
-	"node-roon-api-transport": "github:roonlabs/node-roon-api-transport",
-	"mqtt" : "",
-	"node-roon-api-settings": "github:roonlabs/node-roon-api-settings"
+        "node-roon-api-transport": "github:roonlabs/node-roon-api-transport",
+        "mqtt": "",
+        "node-roon-api-settings": "github:roonlabs/node-roon-api-settings"
     }
 }
