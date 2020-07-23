@@ -30,7 +30,6 @@ function mqtt_publish_JSON( mqttbase, mqtt_client, jsondata ) {
 	} else {
 		if ( debug ) { console.log( '*** mqtt_publish_JSON called but unable to publish. mqtt_client=%s', typeof mqttclient !== 'undefined' ? JSON.stringify(mqttclient) : 'undefined' ); }
 	}
-
 }
 
 function mqtt_get_client() {
@@ -40,7 +39,7 @@ function mqtt_get_client() {
 		if ( mysettings.mqttprotocol ) { protocol = mysettings.mqttprotocol; }
 		options = {};
 		options.clean = true;
-		options.clientId = roon.extension_reginfo.extension_id; //+= "." + hostname;
+		options.clientId = "roon-extension-mqtt-" + (Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5)); //+= "." + hostname;
 		options.servername = mysettings.mqttbroker;
 		if ( mysettings.mqttusername && mysettings.mqttpassword ) {
 			options.username = mysettings.mqttusername;
@@ -51,7 +50,7 @@ function mqtt_get_client() {
 		}
 		if ( mysettings.tls_cafile ) {
 			try {
-				options.ca = fs.readFileSync(mysettings.tls_cafile);	
+				options.ca = fs.readFileSync('config/'+mysettings.tls_cafile);	
 			} catch (err) {
 				roon_svc_status.set_status("Unable to open CA File (" + err + ")", true);
 				return null;
@@ -69,7 +68,6 @@ function mqtt_get_client() {
 			mqtt_client.publish('roon/online','true');
 			mqtt_client.subscribe('roon/+/command');
 			mqtt_client.subscribe('roon/+/outputs/+/volume/set');
-			//mqtt_client.subscribe('roon/#');
 			roon_svc_status.set_status("MQTT Broker Connected", false);
 		});
 
@@ -240,7 +238,7 @@ function makelayout(settings) {
 var roon = new RoonApi({
 	extension_id:        'nl.fjgalesloot.mqtt',
 	display_name:        "MQTT Extension",
-	display_version:     "0.3",
+	display_version:     "1.0",
 	publisher:           'Floris Jan Galesloot',
 	email:               'fjgalesloot@triplew.nl',
 	website:             'https://github.com/fjgalesloot/roon-extension-mqtt',
@@ -289,16 +287,36 @@ var roon = new RoonApi({
 	}
 });
 
-var mysettings = roon.load_config("settings") || {
-	mqttbroker: "localhost",
-	mqttprotocol: "mqtt://",
-	mqttport: 1883,
-	debug: false
+var saveDefaultSetting = false;
+var mysettings = roon.load_config("settings");
+if ( !mysettings ) {
+	mysettings = {
+		mqttbroker: "localhost",
+		mqttprotocol: "mqtt://",
+		mqttport: 1883,
+		debug: false,
+		tls_rejectUnauthorized: false
+	}
+	saveDefaultSetting = true;
 };
 
 if ( typeof mysettings.debug !== 'undefined' ) {
 	debug = mysettings.debug ;
+} else {
+	// Set debug to false when setting is
+	mysettings.debug = false;
+	saveDefaultSetting = true;
 }
+if ( typeof mysettings.mqttport === 'undefined' ) {
+	mysettings.mqttport = 1883;
+	saveDefaultSetting = true;
+}
+if ( typeof mysettings.tls_rejectUnauthorized === 'undefined' ) {
+	mysettings.tls_rejectUnauthorized = false;
+	saveDefaultSetting = true;
+}
+
+if ( saveDefaultSetting ) { roon.save_config("settings", mysettings); }
 if ( debug ) { console.log('*** starting with Settings=%s', JSON.stringify(mysettings)); }
 var roon_svc_status = new RoonApiStatus(roon);
 
