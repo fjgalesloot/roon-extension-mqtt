@@ -16,4 +16,4 @@ RUN npm install
 # Bundle app source
 COPY . /usr/src/app
 RUN ln -sf /usr/src/app/config/config.json /usr/src/app/config.json
-CMD ["node","roon-mqtt.js"]
+CMD ["/bin/bash","run.sh"]
