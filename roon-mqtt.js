@@ -238,7 +238,7 @@ function makelayout(settings) {
 var roon = new RoonApi({
 	extension_id:        'nl.fjgalesloot.mqtt',
 	display_name:        "MQTT Extension",
-	display_version:     "1.0",
+	display_version:     "1.1",
 	publisher:           'Floris Jan Galesloot',
 	email:               'fjgalesloot@triplew.nl',
 	website:             'https://github.com/fjgalesloot/roon-extension-mqtt',
@@ -267,7 +267,13 @@ var roon = new RoonApi({
 							//var regex = '';
 							if ( zonename ) {
 								zonename = zonename.replace(/ \+.*/,'');
-								roon_zones[zonename] = JSON.parse(JSON.stringify(zonedata));
+								if ( zoneevent !='zones_seek_changed' ) {
+									// zones_seek_changed only passes seek/queue position. Do not refresh zone cache
+									roon_zones[zonename] = JSON.parse(JSON.stringify(zonedata));
+								} else {
+									roon_zones[zonename].queue_time_remaining = zonedata.queue_time_remaining;
+									roon_zones[zonename].seek_position = zonedata.seek_position;
+								}
 								if ( debug ) { console.log('*** publising(if needed) to zone %s: %s', zonename, JSON.stringify(zonedata)); }
 								mqtt_publish_JSON( 'roon/'+zonename, mqtt_client, zonedata);
 							}
