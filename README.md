@@ -46,7 +46,7 @@ To set the volume for a zone use the syntax:
 
 Set volume to 65 for output: publish to `roon/[zone-name]/outputs/[output-name]/volume/set`  with message `65`
 
-### Browsing
+### Browsing (beta only)
 
 See for possible hierarchies: https://roonlabs.github.io/node-roon-api/RoonApiBrowse.html#~loadresultcallback
 
