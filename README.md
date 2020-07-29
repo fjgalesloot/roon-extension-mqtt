@@ -60,4 +60,4 @@ Examples (message is case insensitive):
 - publish to `roon/[zone-name]/artists` the message containing `{"title":"artist name", "action":"Start Radio"}` starts Artist Radio
 - publish to `roon/[zone-name]/artists` the message containing `{"title":"artist name", "album":"album title", "action":"Shuffled"}` starts the album shuffled
 - publish to `roon/[zone-name]/artists` the message containing `{"title":"artist name", "album":"album title", "action":"Queue"}` queues the album
-- publish to `roon/[zone-name]/albums` the message containing `{"title":"album title"}` queues the first album with the album title
+- publish to `roon/[zone-name]/albums` the message containing `album title` starts the first album with the album title (Play Now)
