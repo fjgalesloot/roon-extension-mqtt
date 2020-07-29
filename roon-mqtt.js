@@ -9,7 +9,8 @@ var mqtt_data={};
 var RoonApi 			= require("node-roon-api"),
 	RoonApiStatus		= require("node-roon-api-status"),
 	RoonApiTransport	= require("node-roon-api-transport"),
-	RoonApiSettings		= require('node-roon-api-settings');
+	RoonApiSettings		= require('node-roon-api-settings'),
+	RoonApiBrowse    	= require('node-roon-api-browse');
 
 
 function mqtt_publish_JSON( mqttbase, mqtt_client, jsondata ) {
@@ -67,6 +68,8 @@ function mqtt_get_client() {
 		mqtt_client.on('connect', () => {
 			mqtt_client.publish('roon/online','true');
 			mqtt_client.subscribe('roon/+/command');
+			//mqtt_client.subscribe('roon/browse');
+			mqtt_client.subscribe('roon/+/browse/+');
 			mqtt_client.subscribe('roon/+/outputs/+/volume/set');
 			roon_svc_status.set_status("MQTT Broker Connected", false);
 		});
@@ -103,8 +106,19 @@ function mqtt_get_client() {
 					} else {
 						roon_core.services.RoonApiTransport.change_volume(outputid, "absolute", parseInt(message));
 					}
+				} else if ( topic_split[2] === 'browse' && topic_split.length == 4) {
+					let zoneId = roon_zones[topic_split[1]]["zone_id"];
+					let hierarchy =  topic_split[3].toString().toLowerCase();
+					let action = {};
+					try {
+						action = JSON.parse(message.toString().toLowerCase());
+					} catch (e) {
+						console.log('*** no valid JSON in message. Assume only title is passed. message: %s', message.toString() );
+						action.title = message.toString().toLowerCase();
+					}
+					if ( action.title ) { browse_item( zoneId, hierarchy, action ); }
 				}
-			}
+		}
 		});
 	} catch (err) {
 		if ( debug ) { console.log('*** Error connecting: %s', err);}
@@ -233,12 +247,98 @@ function makelayout(settings) {
 
    return l;
 }
+ 
+function browse_item(zoneid, hierarchy, action) {
+	if ( action && hierarchy ) {
+		opts = { hierarchy: hierarchy, pop_all: true, action: action };
+		roon_core.services.RoonApiBrowse.browse(opts, (err,r) => load_item_cb(err, r, opts, function(item_key) {
+			if ( item_key ) {
+				opts = { 
+					hierarchy: hierarchy, 
+					item_key: item_key,
+					zone_or_output_id: zoneid,					
+				};
+				roon_core.services.RoonApiBrowse.browse(opts, (err, r) => {
+					if ( debug ) { 
+						console.log('*** RoonApiBrowse.browse control result: err=%s', JSON.stringify(err) );
+						console.log('*** RoonApiBrowse.browse control result: r=%s', JSON.stringify(r) );
+					}	
+				});
+			} else if ( debug ) { console.log('*** Requested title: "%s" not found in hierarchy "%s".', action.title, hierarchy );}
+		}));
+	} else if ( debug ) { console.log('*** Incomplete browse request. hierarchy=%s, action=%s', hierarchy, JSON.stringify(action) );}
+}
 
+function load_item_cb( err, r, opts, cb, offset) {
+	var querySize = 100;
+	if ( !offset ) offset = 0;
+
+	if ( debug ) { 
+		console.log('*** RoonApiBrowse.browse result: err=%s', JSON.stringify(err) );
+		console.log('*** RoonApiBrowse.browse result: r=%s', JSON.stringify(r) );
+	}
+	opts.count = querySize;
+	opts.offset = offset;
+	
+	roon_core.services.RoonApiBrowse.load(opts, (err, r) => { 
+		if ( debug ) { 
+			console.log('*** RoonApiBrowse.load result: err=%s', JSON.stringify(err) );
+			console.log('*** RoonApiBrowse.load result: r=%s', JSON.stringify(r) );
+		}
+		if ( !err ) {
+			var foundItem;
+			var actionListItem;
+			for ( var i in r.items ) {
+				var item = r.items[i]
+				if ( debug ) { console.log('*** Checking item for requested action=%s item=%s', JSON.stringify(opts.action), JSON.stringify(item) );}
+				if ( !opts.action.title && item.hint === 'action' ) {
+					// If no action.title is available, play first actionable item
+					foundItem = item;
+					break;
+				}
+				else if ( item.title.toLowerCase() === opts.action.title ) {
+					foundItem = item;
+					break;
+				} else {
+					if ( !actionListItem && item.hint === 'action_list') {
+						actionListItem = item;
+					}
+				}
+			}
+			if ( !foundItem && r.items.length == querySize ) {
+				load_item_cb( err, r, opts, cb, offset+querySize);
+			} else if ( foundItem && foundItem.hint === 'list' ) {
+				opts = { 
+					hierarchy: opts.hierarchy,
+					item_key: foundItem.item_key, 
+					action: { 
+						title: opts.action.album,
+						action: opts.action.action
+					}
+				};				
+				roon_core.services.RoonApiBrowse.browse(opts, (err,r) => load_item_cb(err, r, opts, cb));
+			} else if ( !foundItem && actionListItem ) {
+				opts = { 
+					hierarchy: opts.hierarchy,
+					item_key: actionListItem.item_key, 
+					action: { 
+						title: opts.action.action
+					}
+				};				
+				roon_core.services.RoonApiBrowse.browse(opts, (err,r) => load_item_cb(err, r, opts, cb));
+			} else {
+				var item_key;
+				if ( foundItem ) { item_key = foundItem.item_key; }
+				cb && cb(item_key);
+			}
+		}
+	});
+}
 
 var roon = new RoonApi({
 	extension_id:        'nl.fjgalesloot.mqtt',
 	display_name:        "MQTT Extension",
-	display_version:     "1.1",
+	display_version:     "2.0.0b",
 	publisher:           'Floris Jan Galesloot',
 	email:               'fjgalesloot@triplew.nl',
 	website:             'https://github.com/fjgalesloot/roon-extension-mqtt',
@@ -348,7 +448,7 @@ var roon_svc_settings = new RoonApiSettings(roon, {
 });
 
 roon.init_services({
-	required_services: [ RoonApiTransport ],
+	required_services: [ RoonApiTransport, RoonApiBrowse ],
 	provided_services: [ roon_svc_settings, roon_svc_status ]
 });
 
