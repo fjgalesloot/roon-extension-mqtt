@@ -15,6 +15,11 @@ To run as a systemd service, change the provided .service file as necessary and 
 
 You can set the hostname or IP address of the MQTT broker in the settings with the Roon application.
 
+### Docker
+You can also run this extension as a docker container. Example command:
+
+`docker run -v [volume or host-folder]:/usr/src/app/config/ fjgalesloot/roon-extension-mqtt:latest`
+
 
 ## Topics
 
@@ -28,17 +33,31 @@ You can also see all published MQTT methods by uncommenting line 19 in app.js. B
 
 To control a zone or an output, push a MQTT message to a zone/output like the following examples:
 
-Send 'play' command to zone:   `/roon/[zone-name]/command/play`
+Send 'play' command to zone: publish to `roon/[zone-name]/command/` with message `play`
 
-Send 'play' command to output:  `/roon/[zone-name]/[output-name]/command/play`
+Send 'play' command to output: publish to `roon/[zone-name]/[output-name]/command` with message `play`
 
 
-Available commands to use are defined by the RoonApiTransport: `play | pause | playpause | stop | previous | next`
+Available commands to use as message are defined by the RoonApiTransport: `play | pause | playpause | stop | previous | next`
 
 ### Volume
 
 To set the volume for a zone use the syntax:
 
-Set volume to 65 for output:  `/roon/[zone-name]/outputs/[output-name]/volume/set/65`
+Set volume to 65 for output: publish to `roon/[zone-name]/outputs/[output-name]/volume/set`  with message `65`
 
+### Browsing
 
+See for possible hierarchies: https://roonlabs.github.io/node-roon-api/RoonApiBrowse.html#~loadresultcallback
+
+To play a specific browse item you can publish the Title of the item to play to a hierarchy topic or publish a JSON object if more control is desired.
+
+Examples (message is case insensitive):
+
+- publish to `roon/[zone-name]/internet_radio` the message containing `radio title` starts playing the internet radion station
+- publish to `roon/[zone-name]/playlists` the message containing `playlist title` starts the play list (Play Now)
+- publish to `roon/[zone-name]/playlists` the message containing `{"title":"playlist title", "action":"Shuffle"}` starts the playlist shuffled
+- publish to `roon/[zone-name]/artists` the message containing `{"title":"artist name", "action":"Start Radio"}` starts Artist Radio
+- publish to `roon/[zone-name]/artists` the message containing `{"title":"artist name", "album":"album title", "action":"Shuffled"}` starts the album shuffled
+- publish to `roon/[zone-name]/artists` the message containing `{"title":"artist name", "album":"album title", "action":"Queue"}` queues the album
+- publish to `roon/[zone-name]/albums` the message containing `{"title":"album title"}` queues the first album with the album title
