@@ -54,10 +54,10 @@ To play a specific browse item you can publish the Title of the item to play to 
 
 Examples (message is case insensitive):
 
-- publish to `roon/[zone-name]/internet_radio` the message containing `radio title` starts playing the internet radion station
-- publish to `roon/[zone-name]/playlists` the message containing `playlist title` starts the play list (Play Now)
-- publish to `roon/[zone-name]/playlists` the message containing `{"title":"playlist title", "action":"Shuffle"}` starts the playlist shuffled
-- publish to `roon/[zone-name]/artists` the message containing `{"title":"artist name", "action":"Start Radio"}` starts Artist Radio
-- publish to `roon/[zone-name]/artists` the message containing `{"title":"artist name", "album":"album title", "action":"Shuffled"}` starts the album shuffled
-- publish to `roon/[zone-name]/artists` the message containing `{"title":"artist name", "album":"album title", "action":"Queue"}` queues the album
-- publish to `roon/[zone-name]/albums` the message containing `album title` starts the first album with the album title (Play Now)
+- publish to `roon/[zone-name]/browse/internet_radio` the message containing `radio title` starts playing the internet radion station
+- publish to `roon/[zone-name]/browse/playlists` the message containing `playlist title` starts the play list (Play Now)
+- publish to `roon/[zone-name]/browse/playlists` the message containing `{"title":"playlist title", "action":"Shuffle"}` starts the playlist shuffled
+- publish to `roon/[zone-name]/browse/artists` the message containing `{"title":"artist name", "action":"Start Radio"}` starts Artist Radio
+- publish to `roon/[zone-name]/browse/artists` the message containing `{"title":"artist name", "album":"album title", "action":"Shuffled"}` starts the album shuffled
+- publish to `roon/[zone-name]/browse/artists` the message containing `{"title":"artist name", "album":"album title", "action":"Queue"}` queues the album
+- publish to `roon/[zone-name]/browse/albums` the message containing `album title` starts the first album with the album title (Play Now)
