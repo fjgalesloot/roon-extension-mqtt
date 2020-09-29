@@ -66,7 +66,7 @@ function mqtt_get_client() {
 		});
 		
 		mqtt_client.on('connect', () => {
-			mqtt_client.publish('roon/online','true', 'retain: true');
+			mqtt_client.publish('roon/online','true',{retain: true});
 			mqtt_client.subscribe('roon/+/command');
 			mqtt_client.subscribe('roon/+/outputs/+/volume/set');
 			roon_svc_status.set_status("MQTT Broker Connected", false);
