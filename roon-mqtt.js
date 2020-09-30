@@ -1,8 +1,8 @@
 const mqtt = require('mqtt');
 const fs = require('fs');
 var mqtt_client, roon_core, roon_zones={};
-var debug = true;
-var trace = true;
+var debug = false;
+var trace = false;
 var mqtt_data={};
 
 var RoonApi 			= require("node-roon-api"),
