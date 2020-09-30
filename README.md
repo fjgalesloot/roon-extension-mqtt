@@ -25,9 +25,15 @@ You can also run this extension as a docker container. Example command:
 
 The extension subscribes to all zone updates and pushes all info it gets from the Zone object found on https://roonlabs.github.io/node-roon-api-transport/Zone.html defined by the node-roon-api-transport service. It prepends the data with "roon/[zone-name]/...".
 
-The MQTT topci for the 1 Line Now Playing information for a zone called Zone1 is: `roon/Zone1/now_playing/one_line/line1`.
+The MQTT topci for the 1 Line Now Playing information for a zone called Zone1 is: `roon/zone1/now_playing/one_line/line1`.
+
+As the characters +, /, # and space are illegal MQTT topic characters, those will be replaced by -. So if the name of a zone is `Kitchen / Living Room` you should use the topic `Kitchen---Living-Room` when subscribing and/or publishing. The same logic applies to the `[output-name]` descibed below. 
+
+The extension will ignore `+ 1` and similar when zones are grouped. So a grouped zone named `Kitchen + 2` will need to be addressed as `Kitchen` when you want to publish or subscribe to topics.
 
 You can also see all published MQTT methods by uncommenting line 19 in app.js. Be aware that this will create a much larger log file.
+
+
 
 ### Control
 
@@ -45,6 +51,7 @@ Available commands to use as message are defined by the RoonApiTransport: `play 
 To set the volume for a zone use the syntax:
 
 Set volume to 65 for output: publish to `roon/[zone-name]/outputs/[output-name]/volume/set`  with message `65`
+Mute or Unmute are also supported. Simpy publish the message `mute` or `unmute` to the same topic. When setting the volume the unmute command will also be sent to the output.
 
 ### Browsing (beta only)
 

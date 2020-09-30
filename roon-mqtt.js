@@ -14,14 +14,14 @@ var RoonApi 			= require("node-roon-api"),
 
 function mqtt_publish_JSON( mqttbase, mqtt_client, jsondata ) {
 	if ( mqtt_client && mqtt_client.connected ) {
-//		mqtt_client.publish('roon/online','true');
 		for ( var attribute in jsondata ) {
+			var attributeTopic = toMqttTopic(attribute);
 			if ( typeof jsondata[attribute] === 'object' ) {
-				mqtt_publish_JSON( mqttbase+'/'+attribute, mqtt_client, jsondata[attribute] );
-			} else if ( typeof mqtt_data[mqttbase+'/'+attribute] === 'undefined' || mqtt_data[mqttbase+'/'+attribute] != jsondata[attribute].toString()) {
+				mqtt_publish_JSON( mqttbase+'/'+attributeTopic, mqtt_client, jsondata[attribute] );
+			} else if ( typeof mqtt_data[mqttbase+'/'+attributeTopic] === 'undefined' || mqtt_data[mqttbase+'/'+attributeTopic] != jsondata[attribute].toString()) {
 				if ( trace ) { console.log('*** sending MQTT: '+mqttbase+'/'+attribute+'='+jsondata[attribute]); }
-				mqtt_data[mqttbase+'/'+attribute] = jsondata[attribute].toString();
-				mqtt_client.publish(mqttbase+'/'+attribute,jsondata[attribute].toString());
+				mqtt_data[mqttbase+'/'+attributeTopic] = jsondata[attribute].toString();
+				mqtt_client.publish(mqttbase+'/'+attributeTopic,jsondata[attribute].toString());
 
 			} else {
 				if ( trace ) { console.log( '*** mqtt_publish_JSON nothing to publish to %s', mqttbase ); }
@@ -85,78 +85,86 @@ function mqtt_get_client() {
 			let topic_split = topic.split("/");
 			if ( typeof roon_core !== 'undefined' && topic_split[0] === mysettings.mqttroot ) {
 				if ( debug ) { console.log('*** we know of zones: %s', Object.keys(roon_zones) );}
-				if ( typeof roon_zones[topic_split[1]] === "undefined" ) {
+				let roon_zone = roonzone_find_by_mqtttopic(topic_split[1]);
+				if ( roon_zone == null ) {
 					console.log('*** zone %s not found!', topic_split[1] );
-				} else if ( topic_split[2] === 'command' && topic_split.length == 3) {	
-					// Control entire zone
-					if ( debug ) { console.log('*** sending command %s to zone with id=%s', message, roon_zones[topic_split[1]]["zone_id"] );}
-					roon_core.services.RoonApiTransport.control(roon_zones[topic_split[1]]["zone_id"], message.toString());
-				} else if ( topic_split[2] === 'command'  && topic_split.length == 4) {				
-					// Control single output in zone
-					let output = roonzone_find_output_by_name(topic_split[1],topic_split[3]);
-					if ( output == null ) {
-						console.log('*** output %s not found in zone %s!', topic_split[3], topic_split[1] );
-					} else {						
-						if ( debug ) { console.log('*** sending command %s to output with id=%s in zone=%s', message, output["output_id"], topic_split[1] );}
-						roon_core.services.RoonApiTransport.control(output["output_id"], message.toString());					
-					}
-				} else if (topic_split[2] === 'outputs' && topic_split[4] === 'volume' && topic_split[5] === 'set') {
-					if ( debug ) { console.log('*** find output id for zone=%s, output=%s', topic_split[1], topic_split[3]) ;}
-					let output = roonzone_find_output_by_name(topic_split[1],topic_split[3]);
-					if ( output == null ) {
-						console.log('*** output %s not found in zone %s!', topic_split[3], topic_split[1] );
-					} else if ( message === 'mute' ) {
-						roon_core.services.RoonApiTransport.mute(output["output_id"], "mute" );
-					} else if ( message === 'unmute' ) {
-						roon_core.services.RoonApiTransport.mute(output["output_id"], "unmute" );
-					} else {
-						roon_core.services.RoonApiTransport.change_volume(output["output_id"], "absolute", parseInt(message), function() {
-							roon_core.services.RoonApiTransport.mute(output["output_id"], "unmute" );							
-						});
-					}
-				} else if (topic_split[2] === 'outputs' && topic_split.length == 4 ) {			
-					if ( debug ) { console.log('*** %s output %s to zone=%s', topic_split[3], message, topic_split[1]) ;}		
-					let output = roonoutput_find_by_name(message);
-					if ( output != null ) {
-						let curoutputs = [];
-						for ( var index in roon_zones[topic_split[1]]["outputs"] ) {
-							curoutputs.push(roon_zones[topic_split[1]]["outputs"][index]["output_id"]);
-						}						
-						if ( trace ) { console.log('*** curoutputs=%s output["output_id"]=%s', curoutputs, output["output_id"] ) ;}		
-						if ( topic_split[3] === 'add' ) {							
-							if ( !curoutputs.includes(output["output_id"]) ) {
-								if ( roon_zones[topic_split[1]].outputs[Object.keys(roon_zones[topic_split[1]].outputs)[0]].can_group_with_output_ids.includes(output["output_id"]) ) {
-									curoutputs.push(output["output_id"]);
-									roon_core.services.RoonApiTransport.group_outputs(curoutputs);	
-								} else if ( debug ) {
-									console.log('*** output %s cannot begrouped in zone %s', message, topic_split[1] );
-								}
-							} else if ( debug ) {
-								console.log('*** output %s already grouped in zone %s', message, topic_split[1] );	
-							}
-						} else if ( topic_split[3] === 'remove' ) {						
-							if ( curoutputs.includes(output["output_id"]) ) {
-								roon_core.services.RoonApiTransport.ungroup_outputs([output["output_id"]]);	
-							} else if ( debug ) {
-								console.log('*** output %s not found in zone %s', message, topic_split[1] );
-							}
+				} else {					
+					let zonename = roon_zone["display_name"];
+					if ( topic_split[2] === 'command' && topic_split.length == 3) {	
+						// Control entire zone
+						if ( debug ) { console.log('*** sending command %s to zone with id=%s', message, roon_zone["zone_id"] );}
+						roon_core.services.RoonApiTransport.control(roon_zone["zone_id"], message.toString());
+					} else if ( topic_split[2] === 'command'  && topic_split.length == 4) {				
+						// Control single output in zone
+						let output = roonzone_find_output_by_name(zonename,topic_split[3]);
+						if ( output == null ) {
+							console.log('*** output %s not found in zone %s!', topic_split[3], zonename );
+						} else {						
+							if ( debug ) { console.log('*** sending command %s to output with id=%s in zone=%s', message, output["output_id"], zonename );}
+							roon_core.services.RoonApiTransport.control(output["output_id"], message.toString());					
 						}
-					} else if ( debug ) {
-						console.log('*** output %s not found', message) ;
+					} else if (topic_split[2] === 'outputs' && topic_split[4] === 'volume' && topic_split[5] === 'set') {
+						if ( debug ) { console.log('*** find output id for zone=%s, output=%s', zonename, topic_split[3]) ;}
+						let output = roonzone_find_output_by_name(zonename,topic_split[3]);
+						if ( output == null ) {
+							console.log('*** output %s not found in zone %s!', topic_split[3], zonename );
+						} else if ( typeof message === 'undefined' || message == '') {
+							console.log('*** no message for volume set command!');
+						} else if ( message.toString().toLowerCase() == 'mute' ) {
+							roon_core.services.RoonApiTransport.mute(output["output_id"], "mute" );
+						} else if ( message.toString().toLowerCase() == 'unmute' ) {
+							roon_core.services.RoonApiTransport.mute(output["output_id"], "unmute" );
+						} else if ( !isNaN(message) ) { 
+							roon_core.services.RoonApiTransport.change_volume(output["output_id"], "absolute", parseFloat(message.toString()), function() {
+								roon_core.services.RoonApiTransport.mute(output["output_id"], "unmute" );							
+							});
+						} else if ( debug ) {
+							console.log('*** invalid message for volume/set topic message=%s',message ) 
+						}
+					} else if (topic_split[2] === 'outputs' && topic_split.length == 4 ) {			
+						if ( debug ) { console.log('*** %s output %s to zone=%s', topic_split[3], message, zonename) ;}		
+						let output = roonoutput_find_by_name(message);
+						if ( output != null ) {
+							let curoutputs = [];
+							for ( var index in roon_zone["outputs"] ) {
+								curoutputs.push(roon_zone["outputs"][index]["output_id"]);
+							}						
+							if ( trace ) { console.log('*** curoutputs=%s output["output_id"]=%s', curoutputs, output["output_id"] ) ;}		
+							if ( topic_split[3] === 'add' ) {							
+								if ( !curoutputs.includes(output["output_id"]) ) {
+									if ( roon_zone.outputs[Object.keys(roon_zone.outputs)[0]].can_group_with_output_ids.includes(output["output_id"]) ) {
+										curoutputs.push(output["output_id"]);
+										roon_core.services.RoonApiTransport.group_outputs(curoutputs);	
+									} else if ( debug ) {
+										console.log('*** output %s cannot begrouped in zone %s', message, zonename );
+									}
+								} else if ( debug ) {
+									console.log('*** output %s already grouped in zone %s', message, zonename );	
+								}
+							} else if ( topic_split[3] === 'remove' ) {						
+								if ( curoutputs.includes(output["output_id"]) ) {
+									roon_core.services.RoonApiTransport.ungroup_outputs([output["output_id"]]);	
+								} else if ( debug ) {
+									console.log('*** output %s not found in zone %s', message, zonename );
+								}
+							}
+						} else if ( debug ) {
+							console.log('*** output %s not found', message) ;
+						}
+					} else if ( topic_split[2] === 'browse' && topic_split.length == 4) {
+						let zoneId = roon_zone["zone_id"];
+						let hierarchy =  topic_split[3].toString().toLowerCase();
+						let action = {};
+						try {
+							action = JSON.parse(message.toString().toLowerCase());
+						} catch (e) {
+							console.log('*** no valid JSON in message. Assume only title is passed. message: %s', message.toString() );
+							action.title = message.toString().toLowerCase();
+						}
+						if ( action.title ) { browse_item( zoneId, hierarchy, action ); }
+					} else {
+						if ( debug ) { console.log('*** unkown topic=% message=%s', topic , message,) ;}	
 					}
-				} else if ( topic_split[2] === 'browse' && topic_split.length == 4) {
-					let zoneId = roon_zones[topic_split[1]]["zone_id"];
-					let hierarchy =  topic_split[3].toString().toLowerCase();
-					let action = {};
-					try {
-						action = JSON.parse(message.toString().toLowerCase());
-					} catch (e) {
-						console.log('*** no valid JSON in message. Assume only title is passed. message: %s', message.toString() );
-						action.title = message.toString().toLowerCase();
-					}
-					if ( action.title ) { browse_item( zoneId, hierarchy, action ); }
-				} else {
-					if ( debug ) { console.log('*** unkown topic=% message=%s', topic , message,) ;}	
 				}
 			}
 		});
@@ -167,6 +175,23 @@ function mqtt_get_client() {
 
 }
 
+function toMqttTopic(input) {
+	return input.replace(/[ #\+]/g,'-');
+}
+
+function zoneToMqttTopic(input) {
+	return toMqttTopic(input.replace(/ \+ [0-9]?/,''));
+}
+
+function roonzone_find_by_mqtttopic(zonetopic) {
+	for ( var zonename in roon_zones ) {
+		if ( toMqttTopic(zonename.replace(/ \+ [0-9]?/,'')) == toMqttTopic(zonetopic) ) {
+			return roon_zones[zonename];
+		}
+	}
+	return null;
+}
+
 function roonzone_find_by_id(zoneid) {
 	for ( var zonename in roon_zones ) {
 		if ( roon_zones[zonename]["zone_id"] === zoneid ) {
@@ -175,9 +200,10 @@ function roonzone_find_by_id(zoneid) {
 	}
 	return null;
 }
+
 function roonzone_find_output_by_name(zonename,outputname) {
 	for ( var output in roon_zones[zonename]["outputs"] ) {
-		if ( roon_zones[zonename]["outputs"][output]["display_name"].toLowerCase() === outputname.toString().toLowerCase() ) {
+		if ( toMqttTopic(roon_zones[zonename]["outputs"][output]["display_name"].toLowerCase()) === toMqttTopic(outputname.toString().toLowerCase()) ) {
 			return roon_zones[zonename]["outputs"][output];
 		}
 	}
@@ -396,7 +422,7 @@ function load_item_cb( err, r, opts, cb, offset) {
 var roon = new RoonApi({
 	extension_id:        'nl.fjgalesloot.mqtt',
 	display_name:        "MQTT Extension",
-	display_version:     "2.1.0b",
+	display_version:     "2.2.0b",
 	publisher:           'Floris Jan Galesloot',
 	email:               'fjgalesloot@triplew.nl',
 	website:             'https://github.com/fjgalesloot/roon-extension-mqtt',
@@ -414,7 +440,7 @@ var roon = new RoonApi({
 							var zoneid=data[zoneevent][zoneindex];
 							zonename = roonzone_find_by_id(zoneid);
 							if ( debug ) { console.log('*** removed zone with id %s and name %s', zoneid, zonename); }
-							mqtt_publish_JSON( mysettings.mqttroot + '/'+zonename, mqtt_client, { 'state' : 'removed' });
+							mqtt_publish_JSON( mysettings.mqttroot + '/'+ zoneToMqttTopic(zonename), mqtt_client, { 'state' : 'removed' });
 							delete roon_zones[zonename];
 						}
 					} else {
@@ -424,7 +450,6 @@ var roon = new RoonApi({
 							var zonename = zonedata.display_name || roonzone_find_by_id(zonedata.zone_id);
 							//var regex = '';
 							if ( zonename ) {
-								zonename = zonename.replace(/ \+.*/,'');
 								if ( zoneevent !='zones_seek_changed' ) {
 									// zones_seek_changed only passes seek/queue position. Do not refresh zone cache
 									roon_zones[zonename] = JSON.parse(JSON.stringify(zonedata));
@@ -433,7 +458,7 @@ var roon = new RoonApi({
 									roon_zones[zonename].seek_position = zonedata.seek_position;
 								}
 								if ( trace ) { console.log('*** publising(if needed) to zone %s: %s', zonename, JSON.stringify(zonedata)); }
-								mqtt_publish_JSON( mysettings.mqttroot + '/'+zonename, mqtt_client, zonedata);
+								mqtt_publish_JSON( mysettings.mqttroot + '/'+ zoneToMqttTopic(zonename), mqtt_client, zonedata);
 							}
 						}
 					}
@@ -478,6 +503,9 @@ if ( typeof mysettings.mqttport === 'undefined' ) {
 }
 if ( typeof mysettings.mqttroot === 'undefined' ) {
 	mysettings.mqttroot = 'roon';
+	saveDefaultSetting = true;
+} else if ( mysettings.mqttroot != toMqttTopic(mysettings.mqttroot) ) {
+	mysettings.mqttroot = toMqttTopic(mysettings.mqttroot);
 	saveDefaultSetting = true;
 }
 if ( typeof mysettings.tls_rejectUnauthorized === 'undefined' ) {
