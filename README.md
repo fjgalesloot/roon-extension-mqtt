@@ -1,5 +1,5 @@
 # roon-extension-mqtt
-Extension for Roon that publishes status to a MQTT broker
+Roon Extension to integrate Roon into home automation systems by using the MQTT protocol
 
 ## Installation
 
