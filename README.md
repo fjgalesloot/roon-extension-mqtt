@@ -31,10 +31,6 @@ As the characters +, /, # and space are illegal MQTT topic characters, those wil
 
 The extension will ignore `+ 1` and similar when zones are grouped. So a grouped zone named `Kitchen + 2` will need to be addressed as `Kitchen` when you want to publish or subscribe to topics.
 
-You can also see all published MQTT methods by uncommenting line 19 in app.js. Be aware that this will create a much larger log file.
-
-
-
 ### Control
 
 To control a zone or an output, push a MQTT message to a zone/output like the following examples:
