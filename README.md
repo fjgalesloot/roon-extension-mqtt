@@ -53,7 +53,7 @@ To set the volume for a zone use the syntax:
 Set volume to 65 for output: publish to `roon/[zone-name]/outputs/[output-name]/volume/set`  with message `65`
 Mute or Unmute are also supported. Simpy publish the message `mute` or `unmute` to the same topic. When setting the volume the unmute command will also be sent to the output.
 
-### Browsing (beta only)
+### Browsing
 
 See for possible hierarchies: https://roonlabs.github.io/node-roon-api/RoonApiBrowse.html#~loadresultcallback
 
