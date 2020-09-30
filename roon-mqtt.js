@@ -14,7 +14,7 @@ var RoonApi 			= require("node-roon-api"),
 
 function mqtt_publish_JSON( mqttbase, mqtt_client, jsondata ) {
 	if ( mqtt_client && mqtt_client.connected ) {
-		mqtt_client.publish(mysettings.mqttroot + '/online','true');
+//		mqtt_client.publish('roon/online','true');
 		for ( var attribute in jsondata ) {
 			if ( typeof jsondata[attribute] === 'object' ) {
 				mqtt_publish_JSON( mqttbase+'/'+attribute, mqtt_client, jsondata[attribute] );
@@ -41,6 +41,7 @@ function mqtt_get_client() {
 		options.clean = true;
 		options.clientId = "roon-extension-mqtt-" + (Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5)); //+= "." + hostname;
 		options.servername = mysettings.mqttbroker;
+		options.will = { topic: mysettings.mqttroot + 'online', payload: 'false', retain: true };
 		if ( mysettings.mqttusername && mysettings.mqttpassword ) {
 			options.username = mysettings.mqttusername;
 			options.password = mysettings.mqttpassword;
@@ -65,7 +66,7 @@ function mqtt_get_client() {
 		});
 		
 		mqtt_client.on('connect', () => {
-			mqtt_client.publish(mysettings.mqttroot + '/online','true');
+			mqtt_client.publish(mysettings.mqttroot + '/online','true', {retain: true});
 			mqtt_client.subscribe(mysettings.mqttroot + '/+/command');
 			//mqtt_client.subscribe(mysettings.mqttroot + '/browse');
 			mqtt_client.subscribe(mysettings.mqttroot + '/+/browse/+');
