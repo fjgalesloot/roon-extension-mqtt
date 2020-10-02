@@ -1,4 +1,11 @@
-FROM node:latest
+FROM node:lts-buster-slim
+ENV DEBIAN_FRONTEND noninteractive
+
+RUN apt-get update \
+  && apt-get -y upgrade \
+  && apt-get install -qqy --no-install-recommends bash curl bzip2 git \
+  && apt-get autoremove -y && apt-get clean \
+  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Create app directory
 RUN mkdir -p /usr/src/app/config
