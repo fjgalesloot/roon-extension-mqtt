@@ -8,7 +8,7 @@ clone the repository and change to extension directory
 run
 ```
 npm install
-nodejs .
+node .
 ```
 
 To run as a systemd service, change the provided .service file as necessary and put the service configuration file in /etc/systemd/system.
