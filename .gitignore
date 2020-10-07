@@ -3,3 +3,4 @@ bundle.js
 config.json
 *.pem
 package-lock.json
+*.log
