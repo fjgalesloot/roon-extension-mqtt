@@ -25,7 +25,7 @@ for the master (stable) branch:
 
 or if you want to for the development (beta) branch: 
 
-`docker run -v [volume or host-folder]:/usr/src/app/config/ fjgalesloot/roon-extension-mqtt:development`
+`docker run -v [volume or host-folder]:/usr/src/app/config/ fjgalesloot/roon-extension-mqtt:beta`
 
 
 
