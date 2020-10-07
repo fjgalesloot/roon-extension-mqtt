@@ -33,7 +33,7 @@ or if you want to for the development (beta) branch:
 
 The extension subscribes to all zone updates and pushes all info it gets from the Zone object found on https://roonlabs.github.io/node-roon-api-transport/Zone.html defined by the node-roon-api-transport service. It prepends the data with "roon/[zone-name]/...".
 
-The MQTT topci for the 1 Line Now Playing information for a zone called Zone1 is: `roon/zone1/now_playing/one_line/line1`.
+The MQTT topci for the 1 Line Now Playing information for a zone called Zone1 is: `roon/Zone1/now_playing/one_line/line1`.
 
 As the characters +, /, # and space are illegal MQTT topic characters, those will be replaced by -. So if the name of a zone is `Kitchen / Living Room` you should use the topic `Kitchen---Living-Room` when subscribing and/or publishing. The same logic applies to the `[output-name]` descibed below. 
 
