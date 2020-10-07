@@ -422,7 +422,7 @@ function load_item_cb( err, r, opts, cb, offset) {
 var roon = new RoonApi({
 	extension_id:        'nl.fjgalesloot.mqtt',
 	display_name:        "MQTT Extension",
-	display_version:     "2.2.0b",
+	display_version:     "2.2.0",
 	publisher:           'Floris Jan Galesloot',
 	email:               'fjgalesloot@triplew.nl',
 	website:             'https://github.com/fjgalesloot/roon-extension-mqtt',
