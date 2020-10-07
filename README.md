@@ -18,7 +18,15 @@ You can set the hostname or IP address of the MQTT broker in the settings with t
 ### Docker
 You can also run this extension as a docker container. Example command:
 
+for the master (stable) branch:
+
 `docker run -v [volume or host-folder]:/usr/src/app/config/ fjgalesloot/roon-extension-mqtt:latest`
+
+
+or if you want to for the development (beta) branch: 
+
+`docker run -v [volume or host-folder]:/usr/src/app/config/ fjgalesloot/roon-extension-mqtt:development`
+
 
 
 ## Topics
