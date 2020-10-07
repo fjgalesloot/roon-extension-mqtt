@@ -35,7 +35,7 @@ The extension subscribes to all zone updates and pushes all info it gets from th
 
 The MQTT topci for the 1 Line Now Playing information for a zone called Zone1 is: `roon/Zone1/now_playing/one_line/line1`.
 
-As the characters +, /, # and space are illegal MQTT topic characters, those will be replaced by -. So if the name of a zone is `Kitchen / Living Room` you should use the topic `Kitchen---Living-Room` when subscribing and/or publishing. The same logic applies to the `[output-name]` descibed below. 
+As the characters +, / and #  are illegal MQTT topic characters, those will be replaced by -. So if the name of a zone is `Kitchen / Living Room` you should use the topic `Kitchen - Living-Room` when subscribing and/or publishing. The same logic applies to the `[output-name]` descibed below. 
 
 The extension will ignore `+ 1` and similar when zones are grouped. So a grouped zone named `Kitchen + 2` will need to be addressed as `Kitchen` when you want to publish or subscribe to topics.
 

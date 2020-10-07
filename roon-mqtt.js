@@ -176,7 +176,7 @@ function mqtt_get_client() {
 }
 
 function toMqttTopic(input) {
-	return input.replace(/[ #\+]/g,'-');
+	return input.replace(/[#\+]/g,'-');
 }
 
 function zoneToMqttTopic(input) {
