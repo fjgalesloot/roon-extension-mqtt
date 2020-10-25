@@ -41,7 +41,7 @@ function mqtt_get_client() {
 		options.clean = true;
 		options.clientId = "roon-extension-mqtt-" + (Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5)); //+= "." + hostname;
 		options.servername = mysettings.mqttbroker;
-		options.will = { topic: mysettings.mqttroot + 'online', payload: 'false', retain: true };
+		options.will = { topic: mysettings.mqttroot + '/online', payload: 'false', retain: true };
 		if ( mysettings.mqttusername && mysettings.mqttpassword ) {
 			options.username = mysettings.mqttusername;
 			options.password = mysettings.mqttpassword;

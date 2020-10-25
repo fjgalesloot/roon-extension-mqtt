@@ -1,6 +1,6 @@
 {
-    "name": "roon-mqtt-extension",
-    "version": "1.0.0",
+    "name": "roon-extension-mqtt",
+    "version": "2.2.0",
     "description": "Roon Extension to provde status to MQTT Broker",
     "main": "roon-mqtt.js",
     "author": "Floris Jan Galesloot",
