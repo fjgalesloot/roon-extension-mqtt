@@ -91,61 +91,34 @@ function mqttGetClient() {
 					let zoneName = roonZone["display_name"];
 					if (topicSplit[2] === 'command' && topicSplit.length == 3) {
 						// Control entire zone
-						if (debug) { console.log('*** sending command %s to zone with id=%s', message, roonZone["zone_id"]); }
-						roonCore.services.RoonApiTransport.control(roonZone["zone_id"], message.toString());
+						controlZone(roonZone["zone_id"], message);
 					} else if (topicSplit[2] === 'command' && topicSplit.length == 4) {
 						// Control single output in zone
 						let output = roonZoneFindOutputByName(zoneName, topicSplit[3]);
 						if (output == null) {
 							console.log('*** output %s not found in zone %s!', topicSplit[3], zoneName);
 						} else {
-							if (debug) { console.log('*** sending command %s to output with id=%s in zone=%s', message, output["output_id"], zoneName); }
-							roonCore.services.RoonApiTransport.control(output["output_id"], message.toString());
+							controlOutput(output["output_id"], message);
 						}
 					} else if (topicSplit[2] === 'outputs' && topicSplit[4] === 'volume' && topicSplit[5] === 'set') {
+						// adjust volume of an output
 						if (debug) { console.log('*** find output id for zone=%s, output=%s', zoneName, topicSplit[3]); }
 						let output = roonZoneFindOutputByName(zoneName, topicSplit[3]);
 						if (output == null) {
 							console.log('*** output %s not found in zone %s!', topicSplit[3], zoneName);
 						} else if (typeof message === 'undefined' || message == '') {
 							console.log('*** no message for volume set command!');
-						} else if (message.toString().toLowerCase() == 'mute') {
-							roonCore.services.RoonApiTransport.mute(output["output_id"], "mute");
-						} else if (message.toString().toLowerCase() == 'unmute') {
-							roonCore.services.RoonApiTransport.mute(output["output_id"], "unmute");
-						} else if (!isNaN(message)) {
-							roonCore.services.RoonApiTransport.change_volume(output["output_id"], "absolute", parseFloat(message.toString()), function () {
-								roonCore.services.RoonApiTransport.mute(output["output_id"], "unmute");
-							});
-						} else if (debug) {
-							console.log('*** invalid message for volume/set topic message=%s', message)
+						} else {
+							adjustOutputVolume(output["output_id"], message);
 						}
 					} else if (topicSplit[2] === 'outputs' && topicSplit.length == 4) {
 						if (debug) { console.log('*** %s output %s to zone=%s', topicSplit[3], message, zoneName); }
 						let output = roonOutputFindByName(message);
 						if (output != null) {
-							let currentOutputs = [];
-							for (var index in roonZone["outputs"]) {
-								currentOutputs.push(roonZone["outputs"][index]["output_id"]);
-							}
-							if (trace) { console.log('*** currentOutputs=%s output["output_id"]=%s', currentOutputs, output["output_id"]); }
 							if (topicSplit[3] === 'add') {
-								if (!currentOutputs.includes(output["output_id"])) {
-									if (roonZone.outputs[Object.keys(roonZone.outputs)[0]].can_group_with_output_ids.includes(output["output_id"])) {
-										currentOutputs.push(output["output_id"]);
-										roonCore.services.RoonApiTransport.group_outputs(currentOutputs);
-									} else if (debug) {
-										console.log('*** output %s cannot begrouped in zone %s', message, zoneName);
-									}
-								} else if (debug) {
-									console.log('*** output %s already grouped in zone %s', message, zoneName);
-								}
+								addOutputToZone(roonZone, output["output_id"], message);
 							} else if (topicSplit[3] === 'remove') {
-								if (currentOutputs.includes(output["output_id"])) {
-									roonCore.services.RoonApiTransport.ungroup_outputs([output["output_id"]]);
-								} else if (debug) {
-									console.log('*** output %s not found in zone %s', message, zoneName);
-								}
+								removeOutputFromZone(roonZone, output["output_id"], message);
 							}
 						} else if (debug) {
 							console.log('*** output %s not found', message);
@@ -171,7 +144,58 @@ function mqttGetClient() {
 		if (debug) { console.log('*** Error connecting: %s', err); }
 		roonSvcStatus.set_status("MQTT Broker Offline (error)", true);
 	}
+}
 
+function controlZone(zoneId, message) {
+	if (debug) { console.log('*** sending command %s to zone with id=%s', message, zoneId); }
+	roonCore.services.RoonApiTransport.control(zoneId, message.toString());
+}
+
+function controlOutput(outputId, message) {
+	if (debug) { console.log('*** sending command %s to output with id=%s in zone=%s', message, outputId, zoneName); }
+	roonCore.services.RoonApiTransport.control(outputId, message.toString());
+}
+
+function adjustOutputVolume(outputId, message) {
+	if (message.toString().toLowerCase() == 'mute') {
+		roonCore.services.RoonApiTransport.mute(outputId, "mute");
+	} else if (message.toString().toLowerCase() == 'unmute') {
+		roonCore.services.RoonApiTransport.mute(outputId, "unmute");
+	} else if (!isNaN(message)) {
+		roonCore.services.RoonApiTransport.change_volume(outputId, "absolute", parseFloat(message.toString()), function () {
+			roonCore.services.RoonApiTransport.mute(outputId, "unmute");
+		});
+	} else if (debug) {
+		console.log('*** invalid message for volume/set topic message=%s', message)
+	}
+}
+
+function addOutputToZone(roonZone, outputId, message) {
+	let zoneName = roonZone["display_name"];
+	let currentOutputs = [];
+	for (var index in roonZone["outputs"]) {
+		currentOutputs.push(roonZone["outputs"][index]["output_id"]);
+	}
+	if (trace) { console.log('*** currentOutputs=%s output["output_id"]=%s', currentOutputs, outputId); }
+	if (!currentOutputs.includes(outputId)) {
+		if (roonZone.outputs[Object.keys(roonZone.outputs)[0]].can_group_with_output_ids.includes(outputId)) {
+			currentOutputs.push(outputId);
+			roonCore.services.RoonApiTransport.group_outputs(currentOutputs);
+		} else if (debug) {
+			console.log('*** output %s cannot begrouped in zone %s', message, zoneName);
+		}
+	} else if (debug) {
+		console.log('*** output %s already grouped in zone %s', message, zoneName);
+	}
+}
+
+function removeOutputFromZone(roonZone, outputId, message) {
+	let zoneName = roonZone["display_name"];
+	if (currentOutputs.includes(outputId)) {
+		roonCore.services.RoonApiTransport.ungroup_outputs([outputId]);
+	} else if (debug) {
+		console.log('*** output %s not found in zone %s', message, zoneName);
+	}
 }
 
 function toMqttTopic(input) {
