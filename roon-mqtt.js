@@ -12,16 +12,16 @@ var RoonApi = require("node-roon-api"),
 	RoonApiBrowse = require('node-roon-api-browse');
 
 
-function mqttPublishJson(mqttBase, mqttClient, jsonData) {
+function mqttPublishJson(mqttBase, mqttClient, jsonData, retainFlag) {
 	if (mqttClient && mqttClient.connected) {
 		for (var attribute in jsonData) {
 			var attributeTopic = toMqttTopic(attribute);
 			if (typeof jsonData[attribute] === 'object') {
-				mqttPublishJson(mqttBase + '/' + attributeTopic, mqttClient, jsonData[attribute]);
+				mqttPublishJson(mqttBase + '/' + attributeTopic, mqttClient, jsonData[attribute], retainFlag);
 			} else if (typeof mqttData[mqttBase + '/' + attributeTopic] === 'undefined' || mqttData[mqttBase + '/' + attributeTopic] != jsonData[attribute].toString()) {
 				if (trace) { console.log('*** sending MQTT: ' + mqttBase + '/' + attribute + '=' + jsonData[attribute]); }
 				mqttData[mqttBase + '/' + attributeTopic] = jsonData[attribute].toString();
-				mqttClient.publish(mqttBase + '/' + attributeTopic, jsonData[attribute].toString());
+				mqttClient.publish(mqttBase + '/' + attributeTopic, jsonData[attribute].toString(), { 'retain': retainFlag });
 			} else {
 				if (trace) { console.log('*** mqtt_publish_JSON nothing to publish to %s', mqttBase); }
 			}
@@ -334,6 +334,15 @@ function makeLayout(settings) {
 		],
 		setting: "debug"
 	});
+	l.layout.push({
+		type: "dropdown",
+		title: "Retain messages",
+		values: [
+			{ title: "Disable", value: false },
+			{ title: "Enable", value: true }
+		],
+		setting: "retain"
+	});
 	return l;
 }
 
@@ -438,32 +447,32 @@ var roon = new RoonApi({
 		transport.subscribe_zones(function (cmd, data) {
 			if (debug) { console.log('*** we know of zones: %s', Object.keys(roonZones)); }
 			if (typeof data !== "undefined") {
-				for (var zoneevent in data) {
-					if (debug) { console.log('*** zoneevent=%s', zoneevent); }
-					if (zoneevent == 'zones_removed') {
-						for (var zoneindex in data[zoneevent]) {
-							var zoneid = data[zoneevent][zoneindex];
-							zonename = roonZoneFindById(zoneid);
-							if (debug) { console.log('*** removed zone with id %s and name %s', zoneid, zonename); }
-							mqttPublishJson(mySettings.mqttroot + '/' + zoneToMqttTopic(zonename), mqttClient, { 'state': 'removed' });
-							delete roonZones[zonename];
+				for (var zoneEvent in data) {
+					if (debug) { console.log('*** zoneevent=%s', zoneEvent); }
+					if (zoneEvent == 'zones_removed') {
+						for (var zoneIndex in data[zoneEvent]) {
+							var zoneId = data[zoneEvent][zoneIndex];
+							zoneName = roonZoneFindById(zoneId);
+							if (debug) { console.log('*** removed zone with id %s and name %s', zoneId, zoneName); }
+							mqttPublishJson(mySettings.mqttroot + '/' + zoneToMqttTopic(zoneName), mqttClient, { 'state': 'removed' }, mySettings.retain);
+							delete roonZones[zoneName];
 						}
 					} else {
-						var zones = data[zoneevent];
+						var zones = data[zoneEvent];
 						for (var index in zones) {
-							var zonedata = roonZoneJsonChangeOutputs(zones[index]);
-							var zonename = zonedata.display_name || roonZoneFindById(zonedata.zone_id);
+							var zoneData = roonZoneJsonChangeOutputs(zones[index]);
+							var zoneName = zoneData.display_name || roonZoneFindById(zoneData.zone_id);
 							//var regex = '';
-							if (zonename) {
-								if (zoneevent != 'zones_seek_changed') {
+							if (zoneName) {
+								if (zoneEvent != 'zones_seek_changed') {
 									// zones_seek_changed only passes seek/queue position. Do not refresh zone cache
-									roonZones[zonename] = JSON.parse(JSON.stringify(zonedata));
+									roonZones[zoneName] = JSON.parse(JSON.stringify(zoneData));
 								} else {
-									roonZones[zonename].queue_time_remaining = zonedata.queue_time_remaining;
-									roonZones[zonename].seek_position = zonedata.seek_position;
+									roonZones[zoneName].queue_time_remaining = zoneData.queue_time_remaining;
+									roonZones[zoneName].seek_position = zoneData.seek_position;
 								}
-								if (trace) { console.log('*** publising(if needed) to zone %s: %s', zonename, JSON.stringify(zonedata)); }
-								mqttPublishJson(mySettings.mqttroot + '/' + zoneToMqttTopic(zonename), mqttClient, zonedata);
+								if (trace) { console.log('*** publising(if needed) to zone %s: %s', zoneName, JSON.stringify(zoneData)); }
+								mqttPublishJson(mySettings.mqttroot + '/' + zoneToMqttTopic(zoneName), mqttClient, zoneData, mySettings.retain);
 							}
 						}
 					}
