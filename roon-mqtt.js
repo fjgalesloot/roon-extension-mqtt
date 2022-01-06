@@ -74,6 +74,7 @@ function mqttGetClient() {
 			mqtt_client.subscribe(mySettings.mqttroot + "/+/outputs/+/power");
 			mqttClient.subscribe(mySettings.mqttroot + '/+/outputs/add');
 			mqttClient.subscribe(mySettings.mqttroot + '/+/outputs/remove');
+			mqtt_client.subscribe(mySettings.mqttroot + "/+/seek/set");
 			roonSvcStatus.set_status("MQTT Broker Connected", false);
 		});
 
@@ -139,6 +140,12 @@ function mqttGetClient() {
 							console.log("*** no message for power command!");
 						} else {
 							changeOutputPower(output["output_id"], message);
+						}
+					} if (topic_split[2] === "seek" && topic_split[3] === "set" && topic_split.length == 4) {
+						// Change seek position for a zone
+						if (debug) { console.log("*** go to position %s in zone with id=%s", message, roon_zone["zone_id"]); }
+						if (!isNaN(message)) {
+							roon_core.services.RoonApiTransport.seek(roon_zone["zone_id"], "absolute", parseInt(message.toString()));
 						}
 					} else if (topicSplit[2] === 'browse' && topicSplit.length == 4) {
 						let zoneId = roonZone["zone_id"];
