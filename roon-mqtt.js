@@ -70,6 +70,7 @@ function mqttGetClient() {
 			//mqtt_client.subscribe(mysettings.mqttroot + '/browse');
 			mqttClient.subscribe(mySettings.mqttroot + '/+/browse/+');
 			mqttClient.subscribe(mySettings.mqttroot + '/+/outputs/+/volume/set');
+			mqtt_client.subscribe(mysettings.mqttroot + "/+/settings/set/+");
 			mqttClient.subscribe(mySettings.mqttroot + '/+/outputs/add');
 			mqttClient.subscribe(mySettings.mqttroot + '/+/outputs/remove');
 			roonSvcStatus.set_status("MQTT Broker Connected", false);
@@ -92,6 +93,11 @@ function mqttGetClient() {
 					if (topicSplit[2] === 'command' && topicSplit.length == 3) {
 						// Control entire zone
 						controlZone(roonZone["zone_id"], message);
+					} else if (topic_split[2] === "settings" && topic_split[3] === "set" && topic_split.length == 5) {
+						// Change a zone's settings
+						let setting = topic_split[4];
+						if (debug) { console.log("*** change settings %s to zone with id=%s", setting, roon_zone["zone_id"]); }
+						changeZoneSettings(roonZone, setting);
 					} else if (topicSplit[2] === 'command' && topicSplit.length == 4) {
 						// Control single output in zone
 						let output = roonZoneFindOutputByName(zoneName, topicSplit[3]);
@@ -195,6 +201,27 @@ function removeOutputFromZone(roonZone, outputId, message) {
 		roonCore.services.RoonApiTransport.ungroup_outputs([outputId]);
 	} else if (debug) {
 		console.log('*** output %s not found in zone %s', message, zoneName);
+	}
+}
+
+function changeZoneSettings(roonZone, setting) {
+	let zoneId = roonZone["zone_id"];
+	if (setting === "shuffle") {
+		let roonSettings = {
+			shuffle: message.toString().toLowerCase()
+		};
+		roon_core.services.RoonApiTransport.change_settings(zoneId, roonSettings);
+	} else if (setting === "repeat") {
+		var loop_mode = "disabled";
+		if (message.toString().toLowerCase() === "one") {
+			loop_mode = "loop_one";
+		} else if (message.toString().toLowerCase() === "all") {
+			loop_mode = "loop";
+		}
+		let roonSettings = {
+			loop: loop_mode
+		};
+		roon_core.services.RoonApiTransport.change_settings(zoneId, roonSettings);
 	}
 }
 

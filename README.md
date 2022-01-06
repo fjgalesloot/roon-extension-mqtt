@@ -47,8 +47,17 @@ Send 'play' command to zone: publish to `roon/[zone-name]/command/` with message
 
 Send 'play' command to output: publish to `roon/[zone-name]/[output-name]/command` with message `play`
 
-
 Available commands to use as message are defined by the RoonApiTransport: `play | pause | playpause | stop | previous | next`
+
+### Settings
+
+Settings apply to a zone, to change one push a MQTT message to a zonelike the following examples:
+
+Set 'shuffle' for a zone: publish to `roon/[zone-name]/settings/set/shuffle` with message `true` to activate and `false` to deactivate
+
+Set 'repeat' or 'loop' mode for a zone: publish to `roon/[zone-name]/[output-name]/settings/set/repeat` with message `all`
+
+Allowed messages for repeat are: `disabled | one | all`
 
 ### Volume
 
