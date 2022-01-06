@@ -16,6 +16,8 @@ WORKDIR /usr/src/app
 # where available (npm@5+)
 COPY package*.json /usr/src/app/
 
+# In case build is done outside of Github
+RUN git config --global http.sslverify false
 RUN npm install
 # If you are building your code for production
 # RUN npm ci --only=production
