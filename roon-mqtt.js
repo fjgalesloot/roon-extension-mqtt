@@ -70,11 +70,11 @@ function mqttGetClient() {
 			//mqtt_client.subscribe(mysettings.mqttroot + '/browse');
 			mqttClient.subscribe(mySettings.mqttroot + '/+/browse/+');
 			mqttClient.subscribe(mySettings.mqttroot + '/+/outputs/+/volume/set');
-			mqtt_client.subscribe(mySettings.mqttroot + "/+/settings/set/+");
-			mqtt_client.subscribe(mySettings.mqttroot + "/+/outputs/+/power");
+			mqttClient.subscribe(mySettings.mqttroot + "/+/settings/set/+");
+			mqttClient.subscribe(mySettings.mqttroot + "/+/outputs/+/power");
 			mqttClient.subscribe(mySettings.mqttroot + '/+/outputs/add');
 			mqttClient.subscribe(mySettings.mqttroot + '/+/outputs/remove');
-			mqtt_client.subscribe(mySettings.mqttroot + "/+/seek/set");
+			mqttClient.subscribe(mySettings.mqttroot + "/+/seek/set");
 			roonSvcStatus.set_status("MQTT Broker Connected", false);
 		});
 
@@ -95,10 +95,10 @@ function mqttGetClient() {
 					if (topicSplit[2] === 'command' && topicSplit.length == 3) {
 						// Control entire zone
 						controlZone(roonZone["zone_id"], message);
-					} else if (topic_split[2] === "settings" && topic_split[3] === "set" && topic_split.length == 5) {
+					} else if (topicSplit[2] === "settings" && topicSplit[3] === "set" && topicSplit.length == 5) {
 						// Change a zone's settings
-						let setting = topic_split[4];
-						if (debug) { console.log("*** change settings %s to zone with id=%s", setting, roon_zone["zone_id"]); }
+						let setting = topicSplit[4];
+						if (debug) { console.log("*** change settings %s to zone with id=%s", setting, roonZone["zone_id"]); }
 						changeZoneSettings(roonZone, setting);
 					} else if (topicSplit[2] === 'command' && topicSplit.length == 4) {
 						// Control single output in zone
@@ -131,21 +131,21 @@ function mqttGetClient() {
 						} else if (debug) {
 							console.log('*** output %s not found', message);
 						}
-					} else if (topic_split[2] === "outputs" && topic_split[4] === "power") {
-						if (debug) { console.log("*** find output id for zone=%s, output=%s", zonename, topic_split[3]); }
-						let output = roonZoneFindOutputByName(zoneName, topic_split[3]);
+					} else if (topicSplit[2] === "outputs" && topicSplit[4] === "power") {
+						if (debug) { console.log("*** find output id for zone=%s, output=%s", zoneName, topicSplit[3]); }
+						let output = roonZoneFindOutputByName(zoneName, topicSplit[3]);
 						if (output == null) {
-							console.log("*** output %s not found in zone %s!", topic_split[3], zonename);
+							console.log("*** output %s not found in zone %s!", topicSplit[3], zoneName);
 						} else if (typeof message === "undefined" || message == "") {
 							console.log("*** no message for power command!");
 						} else {
 							changeOutputPower(output["output_id"], message);
 						}
-					} if (topic_split[2] === "seek" && topic_split[3] === "set" && topic_split.length == 4) {
+					} if (topicSplit[2] === "seek" && topicSplit[3] === "set" && topicSplit.length == 4) {
 						// Change seek position for a zone
-						if (debug) { console.log("*** go to position %s in zone with id=%s", message, roon_zone["zone_id"]); }
+						if (debug) { console.log("*** go to position %s in zone with id=%s", message, roonZone["zone_id"]); }
 						if (!isNaN(message)) {
-							roon_core.services.RoonApiTransport.seek(roon_zone["zone_id"], "absolute", parseInt(message.toString()));
+							roonCore.services.RoonApiTransport.seek(roonZone["zone_id"], "absolute", parseInt(message.toString()));
 						}
 					} else if (topicSplit[2] === 'browse' && topicSplit.length == 4) {
 						let zoneId = roonZone["zone_id"];
@@ -228,7 +228,7 @@ function changeZoneSettings(roonZone, setting) {
 		let roonSettings = {
 			shuffle: message.toString().toLowerCase()
 		};
-		roon_core.services.RoonApiTransport.change_settings(zoneId, roonSettings);
+		roonCore.services.RoonApiTransport.change_settings(zoneId, roonSettings);
 	} else if (setting === "repeat") {
 		var loop_mode = "disabled";
 		if (message.toString().toLowerCase() === "one") {
@@ -239,16 +239,16 @@ function changeZoneSettings(roonZone, setting) {
 		let roonSettings = {
 			loop: loop_mode
 		};
-		roon_core.services.RoonApiTransport.change_settings(zoneId, roonSettings);
+		roonCore.services.RoonApiTransport.change_settings(zoneId, roonSettings);
 	}
 }
 
 function changeOutputPower(outputId, message) {
 	if (message.toString().toLowerCase() == "on") {
-		roon_core.services.RoonApiTransport.convenience_switch(outputId, {});
+		roonCore.services.RoonApiTransport.convenience_switch(outputId, {});
 		if (debug) { console.log("*** Wake-up %s from standby", outputId); }
 	} else if (message.toString().toLowerCase() == "standby") {
-		roon_core.services.RoonApiTransport.standby(outputId, {});
+		roonCore.services.RoonApiTransport.standby(outputId, {});
 		if (debug) { console.log("*** Send %s to standby", outputId); }
 	} else if (debug) {
 		console.log("*** invalid message for power topic message=%s", message);
