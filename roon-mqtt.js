@@ -70,8 +70,8 @@ function mqttGetClient() {
 			//mqtt_client.subscribe(mysettings.mqttroot + '/browse');
 			mqttClient.subscribe(mySettings.mqttroot + '/+/browse/+');
 			mqttClient.subscribe(mySettings.mqttroot + '/+/outputs/+/volume/set');
-			mqtt_client.subscribe(mysettings.mqttroot + "/+/settings/set/+");
-			mqtt_client.subscribe(mysettings.mqttroot + "/+/outputs/+/power");
+			mqtt_client.subscribe(mySettings.mqttroot + "/+/settings/set/+");
+			mqtt_client.subscribe(mySettings.mqttroot + "/+/outputs/+/power");
 			mqttClient.subscribe(mySettings.mqttroot + '/+/outputs/add');
 			mqttClient.subscribe(mySettings.mqttroot + '/+/outputs/remove');
 			roonSvcStatus.set_status("MQTT Broker Connected", false);
