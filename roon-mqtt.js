@@ -71,6 +71,7 @@ function mqttGetClient() {
 			mqttClient.subscribe(mySettings.mqttroot + '/+/browse/+');
 			mqttClient.subscribe(mySettings.mqttroot + '/+/outputs/+/volume/set');
 			mqtt_client.subscribe(mysettings.mqttroot + "/+/settings/set/+");
+			mqtt_client.subscribe(mysettings.mqttroot + "/+/outputs/+/power");
 			mqttClient.subscribe(mySettings.mqttroot + '/+/outputs/add');
 			mqttClient.subscribe(mySettings.mqttroot + '/+/outputs/remove');
 			roonSvcStatus.set_status("MQTT Broker Connected", false);
@@ -128,6 +129,16 @@ function mqttGetClient() {
 							}
 						} else if (debug) {
 							console.log('*** output %s not found', message);
+						}
+					} else if (topic_split[2] === "outputs" && topic_split[4] === "power") {
+						if (debug) { console.log("*** find output id for zone=%s, output=%s", zonename, topic_split[3]); }
+						let output = roonZoneFindOutputByName(zoneName, topic_split[3]);
+						if (output == null) {
+							console.log("*** output %s not found in zone %s!", topic_split[3], zonename);
+						} else if (typeof message === "undefined" || message == "") {
+							console.log("*** no message for power command!");
+						} else {
+							changeOutputPower(output["output_id"], message);
 						}
 					} else if (topicSplit[2] === 'browse' && topicSplit.length == 4) {
 						let zoneId = roonZone["zone_id"];
@@ -222,6 +233,18 @@ function changeZoneSettings(roonZone, setting) {
 			loop: loop_mode
 		};
 		roon_core.services.RoonApiTransport.change_settings(zoneId, roonSettings);
+	}
+}
+
+function changeOutputPower(outputId, message) {
+	if (message.toString().toLowerCase() == "on") {
+		roon_core.services.RoonApiTransport.convenience_switch(outputId, {});
+		if (debug) { console.log("*** Wake-up %s from standby", outputId); }
+	} else if (message.toString().toLowerCase() == "standby") {
+		roon_core.services.RoonApiTransport.standby(outputId, {});
+		if (debug) { console.log("*** Send %s to standby", outputId); }
+	} else if (debug) {
+		console.log("*** invalid message for power topic message=%s", message);
 	}
 }
 

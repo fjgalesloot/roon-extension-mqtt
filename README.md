@@ -51,9 +51,11 @@ Available commands to use as message are defined by the RoonApiTransport: `play 
 
 ### Settings
 
-Settings apply to a zone, to change one push a MQTT message to a zonelike the following examples:
+Settings apply to a zone, to change one push a MQTT message to a zone like the following examples:
 
 Set 'shuffle' for a zone: publish to `roon/[zone-name]/settings/set/shuffle` with message `true` to activate and `false` to deactivate
+
+Allowed messages for shuffle are: `true | false`
 
 Set 'repeat' or 'loop' mode for a zone: publish to `roon/[zone-name]/[output-name]/settings/set/repeat` with message `all`
 
@@ -65,6 +67,12 @@ To set the volume for a zone use the syntax:
 
 Set volume to 65 for output: publish to `roon/[zone-name]/outputs/[output-name]/volume/set`  with message `65`
 Mute or Unmute are also supported. Simpy publish the message `mute` or `unmute` to the same topic. When setting the volume the unmute command will also be sent to the output.
+
+### Power / Standby
+
+So change the power mode of an output: publish to `roon/[zone-name]/outputs/[output-name]/power` with message `standby` to put the output into standby and `on` to power it on
+
+Allowed messages for power are: `on | standby`
 
 ### Browsing
 
