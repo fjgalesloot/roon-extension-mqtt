@@ -1,3 +1,4 @@
+const package_json = require('./package.json');
 const mqtt = require('mqtt');
 const fs = require('fs');
 var mqttClient, roonCore, roonZones = {};
@@ -40,6 +41,7 @@ function mqttGetClient() {
 		options.clean = true;
 		options.clientId = "roon-extension-mqtt-" + (Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5)); //+= "." + hostname;
 		options.servername = mySettings.mqttbroker;
+		options.port = mySettings.mqttport;
 		options.will = { topic: mySettings.mqttroot + '/online', payload: 'false', retain: true };
 		if (mySettings.mqttusername && mySettings.mqttpassword) {
 			options.username = mySettings.mqttusername;
@@ -493,7 +495,7 @@ function loadItemCallback(err, r, opts, cb, offset) {
 var roon = new RoonApi({
 	extension_id: 'nl.fjgalesloot.mqtt',
 	display_name: "MQTT Extension",
-	display_version: "2.2.0",
+	display_version: package_json.version,
 	publisher: 'Floris Jan Galesloot',
 	email: 'fjgalesloot@triplew.nl',
 	website: 'https://github.com/fjgalesloot/roon-extension-mqtt',
