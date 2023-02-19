@@ -101,7 +101,7 @@ function mqttGetClient() {
 						// Change a zone's settings
 						let setting = topicSplit[4];
 						if (debug) { console.log("*** change settings %s to zone with id=%s", setting, roonZone["zone_id"]); }
-						changeZoneSettings(roonZone, setting);
+						changeZoneSettings(roonZone, setting, message);
 					} else if (topicSplit[2] === 'command' && topicSplit.length == 4) {
 						// Control single output in zone
 						let output = roonZoneFindOutputByName(zoneName, topicSplit[3]);
@@ -224,7 +224,7 @@ function removeOutputFromZone(roonZone, outputId, message) {
 	}
 }
 
-function changeZoneSettings(roonZone, setting) {
+function changeZoneSettings(roonZone, setting, message) {
 	let zoneId = roonZone["zone_id"];
 	if (setting === "shuffle") {
 		let roonSettings = {
