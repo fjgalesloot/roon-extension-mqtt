@@ -22,12 +22,12 @@ Example commands:
 
 for the master (stable) branch:
 
-`docker run -v [volume or host-folder]:/usr/src/app/config/ -network host fjgalesloot/roon-extension-mqtt:latest`
+`docker run -v [volume or host-folder]:/usr/src/app/config/ --network host fjgalesloot/roon-extension-mqtt:latest`
 
 
 or if you want to for the development (beta) branch: 
 
-`docker run -v [volume or host-folder]:/usr/src/app/config/ -network host fjgalesloot/roon-extension-mqtt:beta`
+`docker run -v [volume or host-folder]:/usr/src/app/config/ --network host fjgalesloot/roon-extension-mqtt:beta`
 
 
 
