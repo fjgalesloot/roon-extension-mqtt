@@ -16,16 +16,18 @@ To run as a systemd service, change the provided .service file as necessary and 
 You can set the hostname or IP address of the MQTT broker in the settings with the Roon application.
 
 ### Docker
-You can also run this extension as a docker container. Example command:
+You can also run this extension as a docker container. You'll have to use host networking for the extenstion to work properly with Roon.
+
+Example commands:
 
 for the master (stable) branch:
 
-`docker run -v [volume or host-folder]:/usr/src/app/config/ fjgalesloot/roon-extension-mqtt:latest`
+`docker run -v [volume or host-folder]:/usr/src/app/config/ -network host fjgalesloot/roon-extension-mqtt:latest`
 
 
 or if you want to for the development (beta) branch: 
 
-`docker run -v [volume or host-folder]:/usr/src/app/config/ fjgalesloot/roon-extension-mqtt:beta`
+`docker run -v [volume or host-folder]:/usr/src/app/config/ -network host fjgalesloot/roon-extension-mqtt:beta`
 
 
 
